@@ -1,0 +1,3 @@
+根据日出日落时间自动切换win10/win11的darkmode/lightMode.
+日出日落时间按照系统所在地点gps算得。
+采用powershell脚本自动设置为windows任务计划，定时执行切换。

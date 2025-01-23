@@ -7,9 +7,9 @@ function Ensure-AdminPrivileges {
         [string[]]$RemainingArgs
     )
 
-    # ¼ì²éÊÇ·ñÒÔ¹ÜÀíÔ±Éí·İÔËĞĞ
+    # æ£€æŸ¥æ˜¯å¦ä»¥ç®¡ç†å‘˜èº«ä»½è¿è¡Œ
     if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-        # ÖØĞÂÆô¶¯½Å±¾²¢ÇëÇó¹ÜÀíÔ±È¨ÏŞ
+        # é‡æ–°å¯åŠ¨è„šæœ¬å¹¶è¯·æ±‚ç®¡ç†å‘˜æƒé™
         $params = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
         #$params = "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
         if ($RemainingArgs) {$params += " -RemainingArgs `"$($RemainingArgs -join ' ')`"" }
@@ -24,21 +24,21 @@ function Ensure-AdminPrivileges {
     
 function Get-LocationFromWindowsAPI {
     try {
-        # ¼ÓÔØWindows.Location API
+        # åŠ è½½Windows.Location API
         Add-Type -AssemblyName System.Device
-        # ´´½¨Î»ÖÃÌá¹©Õß¶ÔÏó
+        # åˆ›å»ºä½ç½®æä¾›è€…å¯¹è±¡
         $locationProvider = New-Object System.Device.Location.GeoCoordinateWatcher
-        # ¿ªÊ¼»ñÈ¡Î»ÖÃĞÅÏ¢
+        # å¼€å§‹è·å–ä½ç½®ä¿¡æ¯
         $locationProvider.Start()
-        # µÈ´ıÎ»ÖÃĞÅÏ¢¿ÉÓÃ
+        # ç­‰å¾…ä½ç½®ä¿¡æ¯å¯ç”¨
         while ($locationProvider.Status -ne 'Ready' -and $locationProvider.Status -ne 'Initialized') {
             Start-Sleep -Milliseconds 100
         }
-        # »ñÈ¡×ø±ê
+        # è·å–åæ ‡
         $coordinate = $locationProvider.Position.Location
-        # ¼ì²éÊÇ·ñ³É¹¦»ñÈ¡Î»ÖÃĞÅÏ¢
+        # æ£€æŸ¥æ˜¯å¦æˆåŠŸè·å–ä½ç½®ä¿¡æ¯
         if ($coordinate.Latitude -ne 0 -and $coordinate.Longitude -ne 0) {
-            # ·µ»Ø¾­Î³¶È
+            # è¿”å›ç»çº¬åº¦
             return @{
                 Latitude = $coordinate.Latitude
                 Longitude = $coordinate.Longitude
@@ -48,7 +48,7 @@ function Get-LocationFromWindowsAPI {
             return $null
         }
 
-        # Í£Ö¹Î»ÖÃÌá¹©Õß
+        # åœæ­¢ä½ç½®æä¾›è€…
         $locationProvider.Stop()
     } catch {
         Write-Host "An error occurred: $_"
@@ -61,15 +61,15 @@ function Get-LocationFromWindowsAPI {
 
 function Get-LocationFromIP {
     try {
-        # ·¢ËÍHTTPÇëÇó»ñÈ¡IPĞÅÏ¢
+        # å‘é€HTTPè¯·æ±‚è·å–IPä¿¡æ¯
         $response = Invoke-RestMethod -Uri "http://ipinfo.io/json" -Method Get
 
-        # ¼ì²éÇëÇóÊÇ·ñ³É¹¦
+        # æ£€æŸ¥è¯·æ±‚æ˜¯å¦æˆåŠŸ
         if ($response) {
-            # ÌáÈ¡¾­Î³¶ÈĞÅÏ¢
+            # æå–ç»çº¬åº¦ä¿¡æ¯
             $latitude = $response.loc.Split(',')[0]
             $longitude = $response.loc.Split(',')[1]
-            # ·µ»Ø¾­Î³¶È
+            # è¿”å›ç»çº¬åº¦
             return @{
                 Latitude = $latitude
                 Longitude = $longitude
@@ -92,36 +92,36 @@ function Get-SunriseSunset {
     )
 
     try {
-        # ¹¹ÔìAPIÇëÇóURL
+        # æ„é€ APIè¯·æ±‚URL
         $url = "https://api.sunrise-sunset.org/json?lat=$Latitude&lng=$Longitude&date=$Date"
 
-        # ·¢ËÍHTTPÇëÇó
+        # å‘é€HTTPè¯·æ±‚
         $response = Invoke-RestMethod -Uri $url -Method Get
 
-        # ¼ì²éÇëÇóÊÇ·ñ³É¹¦
+        # æ£€æŸ¥è¯·æ±‚æ˜¯å¦æˆåŠŸ
         if ($response.status -eq 'OK') {
-            # ÌáÈ¡ÈÕ³ö¡¢ÈÕÂä¡¢ÌìÁÁºÍÌìºÚÊ±¼ä
+            # æå–æ—¥å‡ºã€æ—¥è½ã€å¤©äº®å’Œå¤©é»‘æ—¶é—´
             $sunrise = $response.results.sunrise
             $sunset = $response.results.sunset
             $twilightBegin = $response.results.civil_twilight_begin
             $twilightEnd = $response.results.civil_twilight_end
 
-            # ¼ì²éÊ±¼äÊÇ·ñÎª¿Õ
+            # æ£€æŸ¥æ—¶é—´æ˜¯å¦ä¸ºç©º
             if (-not $sunrise -or -not $sunset -or -not $twilightBegin -or -not $twilightEnd) {
                 Write-Host "One or more of the times is null or empty."
                 return $null
             }
 
-            # ³¢ÊÔ½«Ê±¼ä×ª»»Îª24Ğ¡Ê±ÖÆ²¢×ª»»Îª±¾µØÊ±¼ä
+            # å°è¯•å°†æ—¶é—´è½¬æ¢ä¸º24å°æ—¶åˆ¶å¹¶è½¬æ¢ä¸ºæœ¬åœ°æ—¶é—´
             try {
-                # ³¢ÊÔÊ¹ÓÃ h:mm:ss tt ¸ñÊ½
+                # å°è¯•ä½¿ç”¨ h:mm:ss tt æ ¼å¼
                 $sunriseUtc = [datetime]::ParseExact($sunrise, 'h:mm:ss tt', [System.Globalization.CultureInfo]::InvariantCulture)
                 $sunsetUtc = [datetime]::ParseExact($sunset, 'h:mm:ss tt', [System.Globalization.CultureInfo]::InvariantCulture)
                 $twilightBeginUtc = [datetime]::ParseExact($twilightBegin, 'h:mm:ss tt', [System.Globalization.CultureInfo]::InvariantCulture)
                 $twilightEndUtc = [datetime]::ParseExact($twilightEnd, 'h:mm:ss tt', [System.Globalization.CultureInfo]::InvariantCulture)
             } catch {
                 try {
-                    # Èç¹ûÉÏÊö¸ñÊ½²»Æ¥Åä£¬³¢ÊÔÊ¹ÓÃ h:mm tt ¸ñÊ½
+                    # å¦‚æœä¸Šè¿°æ ¼å¼ä¸åŒ¹é…ï¼Œå°è¯•ä½¿ç”¨ h:mm tt æ ¼å¼
                     $sunriseUtc = [datetime]::ParseExact($sunrise, 'h:mm tt', [System.Globalization.CultureInfo]::InvariantCulture)
                     $sunsetUtc = [datetime]::ParseExact($sunset, 'h:mm tt', [System.Globalization.CultureInfo]::InvariantCulture)
                     $twilightBeginUtc = [datetime]::ParseExact($twilightBegin, 'h:mm tt', [System.Globalization.CultureInfo]::InvariantCulture)
@@ -132,13 +132,13 @@ function Get-SunriseSunset {
                 }
             }
 
-            # ½«UTCÊ±¼ä×ª»»Îª±¾µØÊ±¼ä
+            # å°†UTCæ—¶é—´è½¬æ¢ä¸ºæœ¬åœ°æ—¶é—´
             $sunriseLocal = $sunriseUtc.ToLocalTime().ToString('HH:mm')
             $sunsetLocal = $sunsetUtc.ToLocalTime().ToString('HH:mm')
             $twilightBeginLocal = $twilightBeginUtc.ToLocalTime().ToString('HH:mm')
             $twilightEndLocal = $twilightEndUtc.ToLocalTime().ToString('HH:mm')
 
-            # Êä³öÈÕ³ö¡¢ÈÕÂä¡¢ÌìÁÁºÍÌìºÚÊ±¼ä
+            # è¾“å‡ºæ—¥å‡ºã€æ—¥è½ã€å¤©äº®å’Œå¤©é»‘æ—¶é—´
             return @{
                 Sunrise = $sunriseLocal
                 Sunset = $sunsetLocal
@@ -160,10 +160,10 @@ function Get-DayNightStatus {
         [datetime]$Sunset
     )
 
-    # »ñÈ¡µ±Ç°±¾µØÊ±¼ä
+    # è·å–å½“å‰æœ¬åœ°æ—¶é—´
     $currentTime = Get-Date
 
-    # ÅĞ¶Ïµ±Ç°ÊÇ°×Ìì»¹ÊÇºÚÒ¹
+    # åˆ¤æ–­å½“å‰æ˜¯ç™½å¤©è¿˜æ˜¯é»‘å¤œ
     if ($currentTime -ge $Sunrise -and $currentTime -lt $Sunset) {
         return 1 #"day"
     } else {
@@ -176,10 +176,10 @@ function Get-IsNightNow {
         [datetime]$Sunset
     )
 
-    # »ñÈ¡µ±Ç°±¾µØÊ±¼ä
+    # è·å–å½“å‰æœ¬åœ°æ—¶é—´
     $currentTime = Get-Date
 
-    # ÅĞ¶Ïµ±Ç°ÊÇ°×Ìì»¹ÊÇºÚÒ¹
+    # åˆ¤æ–­å½“å‰æ˜¯ç™½å¤©è¿˜æ˜¯é»‘å¤œ
     if ($currentTime -ge $Sunrise -and $currentTime -lt $Sunset) {
         return $false
     } else {
@@ -193,14 +193,14 @@ function Set-WindowsTheme {
 
     switch ($Mode) {
         1 {
-            # ÉèÖÃÇ³É«Ä£Ê½
+            # è®¾ç½®æµ…è‰²æ¨¡å¼
             Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 1
             Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 1
             Write-Host "Switched to Light Mode."
             return $true
         }
         0 {
-            # ÉèÖÃÉîÉ«Ä£Ê½
+            # è®¾ç½®æ·±è‰²æ¨¡å¼
             Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0
             Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0
             Write-Host "Switched to Dark Mode."
@@ -214,23 +214,23 @@ function Set-WindowsTheme {
 }
 
 
-# ¶¨Òå´´½¨»òĞŞ¸ÄÈÎÎñ¼Æ»®µÄº¯Êı
+# å®šä¹‰åˆ›å»ºæˆ–ä¿®æ”¹ä»»åŠ¡è®¡åˆ’çš„å‡½æ•°
 function Set-ScheduledTaskForScript {
     param (
         [int]$ThemeMode , 
         [datetime]$StartTime
     )
    
-    # ¼ì²é²ÎÊıºÍ¿ªÊ¼Ê±¼äÊÇ·ñÌá¹©
+    # æ£€æŸ¥å‚æ•°å’Œå¼€å§‹æ—¶é—´æ˜¯å¦æä¾›
     if ($null -eq $ThemeMode -or -not $StartTime) {
         Write-Host "Mode and start time must be provided."
         return $false
     }
 
-    # »ñÈ¡µ±Ç°½Å±¾µÄÍêÕûÂ·¾¶
+    # è·å–å½“å‰è„šæœ¬çš„å®Œæ•´è·¯å¾„
     $scriptPath = $MyInvocation.PSCommandPath
 
-    # ¹¹½¨½Å±¾²ÎÊı×Ö·û´®
+    # æ„å»ºè„šæœ¬å‚æ•°å­—ç¬¦ä¸²
     $paramsString = $ThemeMode
     $TaskName = if( $ThemeMode -eq 1)  {"LightTheme"} else {"DarkTheme"}
     <#
@@ -240,20 +240,20 @@ function Set-ScheduledTaskForScript {
     #>
     $userName = "$env:USERDOMAIN\$env:USERNAME"
 
-    # ¶¨ÒåÈÎÎñ´¥·¢Æ÷£ºÃ¿ÌìÔÚÖ¸¶¨Ê±¼äÔËĞĞ
+    # å®šä¹‰ä»»åŠ¡è§¦å‘å™¨ï¼šæ¯å¤©åœ¨æŒ‡å®šæ—¶é—´è¿è¡Œ
     $trigger = New-ScheduledTaskTrigger -Daily -At $StartTime
 
-    # ¶¨ÒåÈÎÎñ²Ù×÷£ºÔËĞĞ PowerShell ½Å±¾
+    # å®šä¹‰ä»»åŠ¡æ“ä½œï¼šè¿è¡Œ PowerShell è„šæœ¬
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-windowstyle hidden -ExecutionPolicy Bypass -File `"$scriptPath`" $paramsString"
 
-    # ÉèÖÃÈÎÎñÔ­Ôò£¬È·±£ÈÎÎñÔÚÓÃ»§Î´µÇÂ¼Ê±Ò²ÄÜÔËĞĞ£¬µ«²»´æ´¢ÃÜÂë
+    # è®¾ç½®ä»»åŠ¡åŸåˆ™ï¼Œç¡®ä¿ä»»åŠ¡åœ¨ç”¨æˆ·æœªç™»å½•æ—¶ä¹Ÿèƒ½è¿è¡Œï¼Œä½†ä¸å­˜å‚¨å¯†ç 
     $principal  = New-ScheduledTaskPrincipal -UserId $userName -LogonType S4U -RunLevel Highest
   
-    # ¼ì²éÈÎÎñÊÇ·ñÒÑ´æÔÚ
+    # æ£€æŸ¥ä»»åŠ¡æ˜¯å¦å·²å­˜åœ¨
     $existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 
     if ($existingTask) {
-        # ÈÎÎñÒÑ´æÔÚ£¬ĞŞ¸Ä´¥·¢Æ÷
+        # ä»»åŠ¡å·²å­˜åœ¨ï¼Œä¿®æ”¹è§¦å‘å™¨
         try {
             Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
             Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -Principal $principal -Force 
@@ -262,7 +262,7 @@ function Set-ScheduledTaskForScript {
             Write-Host "Failed to modify task: $_"
         }
     } else {
-        # ÈÎÎñ²»´æÔÚ£¬´´½¨ĞÂÈÎÎñ
+        # ä»»åŠ¡ä¸å­˜åœ¨ï¼Œåˆ›å»ºæ–°ä»»åŠ¡
         try {
             Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -Principal $principal -Force 
             Write-Host "Task '$TaskName' created successfully."
@@ -272,24 +272,25 @@ function Set-ScheduledTaskForScript {
     }
 }
 
-# ¶¨Òå´´½¨ÈÎÎñ¼Æ»®µÄº¯Êı
+# å®šä¹‰åˆ›å»ºä»»åŠ¡è®¡åˆ’çš„å‡½æ•°
 function SlefScheduledTask {
     param ([string]$TaskName)
 
-    # ¼ì²éÈÎÎñÃû³ÆÊÇ·ñÌá¹©
+    # æ£€æŸ¥ä»»åŠ¡åç§°æ˜¯å¦æä¾›
     if (-not $TaskName) {
         Write-Host "Task name must be provided."
         return $false
     }
 
-    # »ñÈ¡µ±Ç°½Å±¾µÄÍêÕûÂ·¾¶
+    # è·å–å½“å‰è„šæœ¬çš„å®Œæ•´è·¯å¾„
     $scriptPath = $MyInvocation.PSCommandPath
-    # ¶¨ÒåÈÎÎñ´¥·¢Æ÷£ºÓÃ»§µÇÂ¼Ê±
+    # å®šä¹‰ä»»åŠ¡è§¦å‘å™¨ï¼šç”¨æˆ·ç™»å½•æ—¶
     $trigger = New-ScheduledTaskTrigger -AtLogon
-    # ¶¨ÒåÈÎÎñ²Ù×÷£ºÔËĞĞ PowerShell ½Å±¾
+    $trigger.Delay ='PT3M'
+    # å®šä¹‰ä»»åŠ¡æ“ä½œï¼šè¿è¡Œ PowerShell è„šæœ¬
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-windowstyle hidden -ExecutionPolicy Bypass -File `"$scriptPath`""
 
-    # ×¢²áÈÎÎñ¼Æ»®
+    # æ³¨å†Œä»»åŠ¡è®¡åˆ’
     try {
         Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -User $env:USERNAME -RunLevel Highest -Force
         Write-Host "Task '$TaskName' created successfully."
@@ -300,15 +301,15 @@ function SlefScheduledTask {
 
 function Test-NetworkConnection {
     param (
-        [string]$Target = "http://www.example.com", # Ä¬ÈÏÄ¿±êÎªhttp://www.example.com
-        [int]$Port = 0,                            # Èç¹ûĞèÒª²âÊÔÌØ¶¨¶Ë¿Ú£¬ÇëÌá¹©¶Ë¿ÚºÅ
-        [switch]$UseICMP,                          # Ê¹ÓÃICMP£¨Ping£©²âÊÔ
-        [switch]$UseTCP,                           # Ê¹ÓÃTCP²âÊÔ
-        [switch]$UseHTTP,                          # Ê¹ÓÃHTTP(S)²âÊÔ£¬Ä¬ÈÏ¿ªÆô
-        [switch]$CheckAdapters                     # ¼ì²éÍøÂçÊÊÅäÆ÷×´Ì¬
+        [string]$Target = "http://www.example.com", # é»˜è®¤ç›®æ ‡ä¸ºhttp://www.example.com
+        [int]$Port = 0,                            # å¦‚æœéœ€è¦æµ‹è¯•ç‰¹å®šç«¯å£ï¼Œè¯·æä¾›ç«¯å£å·
+        [switch]$UseICMP,                          # ä½¿ç”¨ICMPï¼ˆPingï¼‰æµ‹è¯•
+        [switch]$UseTCP,                           # ä½¿ç”¨TCPæµ‹è¯•
+        [switch]$UseHTTP,                          # ä½¿ç”¨HTTP(S)æµ‹è¯•ï¼Œé»˜è®¤å¼€å¯
+        [switch]$CheckAdapters                     # æ£€æŸ¥ç½‘ç»œé€‚é…å™¨çŠ¶æ€
     )
 
-    # Èç¹ûÃ»ÓĞÖ¸¶¨ÈÎºÎ²âÊÔ·½·¨£¬ÔòÄ¬ÈÏÊ¹ÓÃHTTP²âÊÔ
+    # å¦‚æœæ²¡æœ‰æŒ‡å®šä»»ä½•æµ‹è¯•æ–¹æ³•ï¼Œåˆ™é»˜è®¤ä½¿ç”¨HTTPæµ‹è¯•
     if (-not ($UseICMP -or $UseTCP -or $CheckAdapters)) {
         $UseHTTP = $true
     }
@@ -316,29 +317,29 @@ function Test-NetworkConnection {
     $isConnected = $false
 
     if ($UseICMP) {
-        Write-Host "ÕıÔÚÊ¹ÓÃICMP²âÊÔµ½ $($Target.Replace('http://','').Replace('https://','')) µÄÁ¬½Ó..."
+        Write-Host "æ­£åœ¨ä½¿ç”¨ICMPæµ‹è¯•åˆ° $($Target.Replace('http://','').Replace('https://','')) çš„è¿æ¥..."
         $targetHost = [System.Uri]::new($Target).Host
         $isConnected = Test-Connection -ComputerName $targetHost -Count 1 -Quiet
     } elseif ($UseTCP -and $Port -gt 0) {
-        Write-Host "ÕıÔÚÊ¹ÓÃTCP²âÊÔµ½ $Target,$Port µÄÁ¬½Ó..."
+        Write-Host "æ­£åœ¨ä½¿ç”¨TCPæµ‹è¯•åˆ° $Target,$Port çš„è¿æ¥..."
         try {
             $result = Test-NetConnection -ComputerName $Target -Port $Port -InformationLevel Quiet -ErrorAction Stop
             $isConnected = $result.TcpTestSucceeded
         } catch {
-            Write-Host "TCP²âÊÔÊ§°Ü: $_"
+            Write-Host "TCPæµ‹è¯•å¤±è´¥: $_"
             $isConnected = $false
         }
     } elseif ($UseHTTP) {
-        Write-Host "ÕıÔÚÊ¹ÓÃHTTP²âÊÔµ½ $Target µÄÁ¬½Ó..."
+        Write-Host "æ­£åœ¨ä½¿ç”¨HTTPæµ‹è¯•åˆ° $Target çš„è¿æ¥..."
         try {
             $response = Invoke-WebRequest -Uri $Target -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
             $isConnected = $true
         } catch {
-            Write-Host "HTTPÇëÇóÊ§°Ü: $_"
+            Write-Host "HTTPè¯·æ±‚å¤±è´¥: $_"
             $isConnected = $false
         }
     } elseif ($CheckAdapters) {
-        Write-Host "ÕıÔÚ¼ì²éÍøÂçÊÊÅäÆ÷×´Ì¬..."
+        Write-Host "æ­£åœ¨æ£€æŸ¥ç½‘ç»œé€‚é…å™¨çŠ¶æ€..."
         $adapters = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' }
         $isConnected = $adapters.Count -gt 0
     }
@@ -366,8 +367,8 @@ if (Test-NetworkConnection) {
     $Location=$Location=Get-LocationFromIP
     if (-not $Location) {$Location=Get-LocationFromWindowsAPI}
     if (-not $Location) {
-        ¡çLocation = @{
-        # ±±¾©µÄÎ³¶È
+        ï¼„Location = @{
+        # åŒ—äº¬çš„çº¬åº¦
         Latitude = 39.9042  
         Longitude = 116.4074  
         }

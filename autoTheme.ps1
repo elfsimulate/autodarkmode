@@ -289,10 +289,13 @@ function SlefScheduledTask {
     $trigger.Delay ='PT3M'
     # 定义任务操作：运行 PowerShell 脚本
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-windowstyle hidden -ExecutionPolicy Bypass -File `"$scriptPath`""
-
+    $userName = "$env:USERDOMAIN\$env:USERNAME"
+    # 设置任务原则，确保任务在用户未登录时也能运行，但不存储密码
+    $principal  = New-ScheduledTaskPrincipal -UserId $userName -LogonType S4U -RunLevel Highest
     # 注册任务计划
     try {
-        Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -User $env:USERNAME -RunLevel Highest -Force
+        $ot=Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -Principal $principal -Force
+        #Register-ScheduledTask -TaskName $TaskName -Trigger $trigger -Action $action -User $env:USERNAME -RunLevel Highest -Force
         Write-Host "Task '$TaskName' created successfully."
     } catch {
         Write-Host "Failed to create task: $_"
